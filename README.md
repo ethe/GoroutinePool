@@ -32,7 +32,7 @@ func main() {
 ```
 
 ## Lock-free Queue
-It is also contains a lock-free queue (linked list) minimal implementation.
+It also contains a lock-free queue (linked list) minimal implementation.
 
 ```go
 package main
