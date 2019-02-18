@@ -1,4 +1,4 @@
-**Deprecated: On Go 1.11.2 goroutine pool has already slower than natiive `go` keyword.**
+**Deprecated: On Go 1.11.2 goroutine pool has already slower than native `go` keyword.**
 
 # Goroutine Pool
 The pool implementation of Go goroutine, it is useful to avoid heavy pressure of `runtime.morestack ` when using goroutine.
