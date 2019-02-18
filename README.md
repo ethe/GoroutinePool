@@ -1,3 +1,5 @@
+**Deprecated: On Go 1.11.2 goroutine pool has already slower than natiive `go` keyword.**
+
 # Goroutine Pool
 The pool implementation of Go goroutine, it is useful to avoid heavy pressure of `runtime.morestack ` when using goroutine.
 It could recycle rather than free goroutines after executed. If the recycled goroutines not be stack reduced yet, then there is no need to request more stack.
