@@ -1,18 +1,6 @@
-// Copyright 2017 PingCAP, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // +build !leak
 
-package gp
+package GoroutinePool
 
 import (
 	"sync"
@@ -21,7 +9,7 @@ import (
 )
 
 func TestBasicAPI(t *testing.T) {
-	gp := New(time.Second)
+	gp := New()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	// cover alloc()
@@ -32,31 +20,8 @@ func TestBasicAPI(t *testing.T) {
 	gp.Go(func() {})
 }
 
-func TestGC(t *testing.T) {
-	gp := New(200 * time.Millisecond)
-	var wg sync.WaitGroup
-	wg.Add(100)
-	for i := 0; i < 100; i++ {
-		idx := i
-		gp.Go(func() {
-			time.Sleep(time.Duration(idx+1) * time.Millisecond)
-			wg.Done()
-		})
-	}
-	wg.Wait()
-
-	time.Sleep(300 * time.Millisecond)
-	gp.Go(func() {}) // To trigger count change.
-
-	gp.Get()
-	_, err := gp.Get()
-	if err == nil {
-		t.Error("all goroutines should be recycled")
-	}
-}
-
 func TestRace(t *testing.T) {
-	gp := New(8 * time.Millisecond)
+	gp := New()
 	var wg sync.WaitGroup
 	begin := make(chan struct{})
 	wg.Add(500)
@@ -76,7 +41,7 @@ func TestRace(t *testing.T) {
 }
 
 func BenchmarkGoPool(b *testing.B) {
-	gp := New(20 * time.Second)
+	gp := New()
 	for i := 0; i < b.N/2; i++ {
 		gp.Go(func() {})
 	}
@@ -98,13 +63,13 @@ func dummy() {
 }
 
 func BenchmarkMorestackPool(b *testing.B) {
-	gp := New(5 * time.Second)
+	gp := New()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		gp.Go(func() {
-			morestack(false)
+			moreStack(false)
 			wg.Done()
 		})
 		wg.Wait()
@@ -117,14 +82,14 @@ func BenchmarkMoreStack(b *testing.B) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
-			morestack(false)
+			moreStack(false)
 			wg.Done()
 		}()
 		wg.Wait()
 	}
 }
 
-func morestack(f bool) {
+func moreStack(f bool) {
 	var stack [8 * 1024]byte
 	if f {
 		for i := 0; i < len(stack); i++ {

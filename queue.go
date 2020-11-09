@@ -1,4 +1,4 @@
-package gp
+package GoroutinePool
 
 import (
 	"errors"
@@ -31,9 +31,10 @@ func NewQueue() *Queue {
 func (q *Queue) Put(v interface{}) {
 	n := &node{v, nil}
 	for {
-		tail := q.tail
-		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.tail.next)), nil, unsafe.Pointer(n)) {
-			atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.tail)), unsafe.Pointer(tail), (unsafe.Pointer)(q.tail.next))
+		tail := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&q.tail)))
+		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&(*node)(tail).next)), nil, unsafe.Pointer(n)) {
+			tailNext := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&(*node)(tail).next)))
+			atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.tail)), tail, tailNext)
 			return
 		}
 	}
@@ -41,12 +42,13 @@ func (q *Queue) Put(v interface{}) {
 
 func (q *Queue) Get() (interface{}, error) {
 	for {
-		p := q.head
-		if p.next == nil {
+		head := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&q.head)))
+		headNext := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&(*node)(head).next)))
+		if (*node)(headNext) == nil {
 			return nil, EmptyQueue
 		}
-		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.head)), unsafe.Pointer(p), (unsafe.Pointer)(q.head.next)) {
-			return p.next.inner, nil
+		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.head)), head, headNext) {
+			return (*node)(headNext).inner, nil
 		}
 	}
 }
